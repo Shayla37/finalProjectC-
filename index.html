@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# Full Stack Demo: OOP & Error Handling</title>
+    <link rel="stylesheet" href="style.css"> 
+</head>
+<body>
+    <div class="container">
+        <h1>C# Backend Demo: OOP Concepts & Error Handling 💻</h1>
+        <p>This page uses JavaScript to call the C# API running on `http://localhost:5000`.</p>
+
+        <h2>1. Object-Oriented Programming (OOP) Concepts</h2>
+        <p id="output">Attempting to load data from /api/oop/concepts...</p>
+
+        <hr>
+
+        <h2>2. Error and Exception Handling Demo</h2>
+        <div class="error-test">
+            <h3>Test `OopController.cs` Division Endpoint: `/api/oop/divide`</h3>
+            <label for="num">Numerator:</label>
+            <input type="text" id="num" value="10">
+            <label for="denom">Denominator:</label>
+            <input type="text" id="denom" value="2">
+            <button onclick="testErrorHandling()">Run Division Test</button>
+            <p id="errorResult">Awaiting test...</p>
+            <p style="font-size: 0.9em; color: #666;">
+                **Test Cases:** Try `10` / `0` (ZeroDivisionError) or `ten` / `5` (InvalidInputException).
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // =======================================================================
+        // --- Research, Read, and Write API Documentation (for Frontend Devs) ---
+        // =======================================================================
+        
+        /**
+         * @apiName GetOOPConcepts
+         * @apiDescription Fetches a list of core OOP concepts, created as C# class instances.
+         * @apiURL http://localhost:5000/api/oop/concepts
+         * @apiMethod GET
+         * @apiSuccess {Object[]} data List of concept objects containing {term, definition}.
+         */
+        async function fetchConcepts() {
+            const outputElement = document.getElementById('output');
+            
+            try {
+                // Calls the OopController's GetConcepts method
+                const response = await fetch('http://localhost:5000/api/oop/concepts');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const concepts = await response.json();
+                
+                // Render the fetched data
+                let html = '<ul class="oop-list">';
+                concepts.forEach(c => {
+                    html += `<li><strong>${c.term}</strong>: ${c.definition}</li>`;
+                });
+                html += '</ul>';
+                outputElement.innerHTML = html;
+
+            } catch (error) {
+                console.error('Failed to fetch OOP concepts:', error);
+                outputElement.innerHTML = `<p class="error">Error fetching data: ${error.message}. <br>Please ensure the C# backend is running on port 5000.</p>`;
+            }
+        }
+
+        /**
+         * @apiName Divide
+         * @apiDescription Tests C# backend error handling (ZeroDivisionError, InvalidInputException).
+         * @apiURL http://localhost:5000/api/oop/divide?num={numerator}&denom={denominator}
+         * @apiMethod GET
+         * @apiSuccess {Object} result The division result and success status.
+         * @apiError (Error 400) Bad Request returned if division by zero or invalid input occurs (handled by C# controller).
+         */
+        async function testErrorHandling() {
+            const num = document.getElementById('num').value;
+            const denom = document.getElementById('denom').value;
+            const resultElement = document.getElementById('errorResult');
+            resultElement.innerHTML = "Sending request...";
+            resultElement.className = '';
+
+            const url = `http://localhost:5000/api/oop/divide?num=${encodeURIComponent(num)}&denom=${encodeURIComponent(denom)}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Success response (HTTP 200)
+                    resultElement.className = 'success';
+                    resultElement.innerHTML = `✅ Success (HTTP 200)! ${data.numerator} / ${data.denominator} = <strong>${data.result}</strong>`;
+                } else {
+                    // Error response (HTTP 400 or 500) caught by C# controller
+                    resultElement.className = 'error';
+                    resultElement.innerHTML = `🛑 C# Error Caught (HTTP ${response.status})! <br><strong>Type:</strong> ${data.error} <br><strong>Message:</strong> ${data.message}`;
+                }
+
+            } catch (error) {
+                // Network failure (server is down)
+                resultElement.className = 'error';
+                resultElement.innerHTML = `❌ Client Network Error: ${error.message}. Is the C# server running?`;
+            }
+        }
+
+        // Initialize the OOP data fetch on page load
+        fetchConcepts();
+    </script>
+</body>
+</html>
